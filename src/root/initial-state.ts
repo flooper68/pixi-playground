@@ -1,24 +1,17 @@
 import { isStateValid } from "./invariants";
-import { createRandomRectangle } from "./rectangles";
+import { Rectangle, createRandomRectangle } from "./rectangles";
 
-export function getRandomInitialState(amount: number) {
+export function getRandomInitialState(amount: number, seed: Rectangle[] = []) {
   let count = 0;
 
-  const initialState = [
-    createRandomRectangle({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-    }),
-  ];
+  const initialState = [...seed];
 
   while (initialState.length < amount) {
     count += 1;
 
-    if (count > 1000) {
+    if (count > 2000) {
       throw new Error("Could not generate initial state");
     }
-
-    console.log(`Trying to add another rectangle, ${initialState.length}`);
 
     const newRectangle = createRandomRectangle({
       x: Math.random() * window.innerWidth,

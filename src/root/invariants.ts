@@ -8,14 +8,44 @@ const boundary = {
   height: window.innerHeight,
 };
 
+const blockInTheMiddle = {
+  x: 400,
+  y: 100,
+  width: 200,
+  height: 400,
+};
+
+const yellowInTheMiddle = {
+  x: 500,
+  y: 300,
+  width: 500,
+  height: 500,
+};
+
 export function isStateValid(rectangles: Rectangle[]): boolean {
   const isAnyRectangleOutOfBounds = rectangles.some((rectangle) => {
     return !Geometry.isRectangleInsideBoundary(rectangle, boundary);
   });
 
-  const isAnyRectangleColliding = rectangles.some((rectangle) => {
+  const isAnyInTheBox = rectangles.some((rectangle) => {
+    return Geometry.areRectanglesOverlapping(rectangle, blockInTheMiddle);
+  });
+
+  const isAnyYellowInTheBox = rectangles.some((rectangle) => {
+    if (rectangle.type !== RectangleType.Yellow) {
+      return false;
+    }
+
+    return Geometry.areRectanglesOverlapping(rectangle, yellowInTheMiddle);
+  });
+
+  const isAnySameColorRectangleColliding = rectangles.some((rectangle) => {
     return rectangles.some((otherRectangle) => {
       if (rectangle.uuid === otherRectangle.uuid) {
+        return false;
+      }
+
+      if (rectangle.type !== otherRectangle.type) {
         return false;
       }
 
@@ -23,7 +53,26 @@ export function isStateValid(rectangles: Rectangle[]): boolean {
     });
   });
 
-  const distanceBetweenClosestRectangles = rectangles.reduce(
+  const isAnyRedColorRectangleCollidingWithGreen = rectangles.some(
+    (rectangle) => {
+      return rectangles.some((otherRectangle) => {
+        if (rectangle.uuid === otherRectangle.uuid) {
+          return false;
+        }
+
+        if (
+          rectangle.type !== RectangleType.Red ||
+          otherRectangle.type !== RectangleType.Green
+        ) {
+          return false;
+        }
+
+        return Geometry.areRectanglesOverlapping(rectangle, otherRectangle);
+      });
+    }
+  );
+
+  const amountOfRectanglesCloseTogether = rectangles.reduce(
     (acc, rectangle) => {
       return (
         acc +
@@ -48,9 +97,9 @@ export function isStateValid(rectangles: Rectangle[]): boolean {
     0
   );
 
-  const onlyFewCloseRectangles = distanceBetweenClosestRectangles < 1000;
+  const onlyFewCloseRectangles = amountOfRectanglesCloseTogether < 1000;
 
-  const redHasOnlyThreeBlueCloseBy = rectangles.every((rectangle) => {
+  const redHasOnlyFewBlueCloseBy = rectangles.every((rectangle) => {
     const isRed = rectangle.type === RectangleType.Red;
 
     if (!isRed) {
@@ -64,20 +113,134 @@ export function isStateValid(rectangles: Rectangle[]): boolean {
 
       const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
 
-      if (distance < 50) {
+      if (distance < 100) {
         return acc + 1;
       }
 
       return acc;
     }, 0);
 
-    return blueCloseByCount < 200;
+    return blueCloseByCount < 20;
+  });
+
+  const greensAreInGroupsWithoutYellows = rectangles.every((rectangle) => {
+    if (rectangle.type !== RectangleType.Green) {
+      return true;
+    }
+
+    const greenCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Green) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    const yellowCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Yellow) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    return greenCloseByCount > yellowCloseByCount;
+  });
+
+  const redAreInGroupsWithoutGreens = rectangles.every((rectangle) => {
+    if (rectangle.type !== RectangleType.Red) {
+      return true;
+    }
+
+    const redCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Red) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    const greenCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Green) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    return redCloseByCount > greenCloseByCount;
+  });
+
+  const redAreInGroupsWithoutYellows = rectangles.every((rectangle) => {
+    if (rectangle.type !== RectangleType.Red) {
+      return true;
+    }
+
+    const redCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Red) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    const yellowCloseByCount = rectangles.reduce((acc, otherRectangle) => {
+      if (otherRectangle.type !== RectangleType.Yellow) {
+        return acc;
+      }
+
+      const distance = Geometry.getRectangleDistance(rectangle, otherRectangle);
+
+      if (distance < 300) {
+        return acc + 1;
+      }
+
+      return acc;
+    }, 0);
+
+    return redCloseByCount > yellowCloseByCount;
   });
 
   return (
     !isAnyRectangleOutOfBounds &&
-    !isAnyRectangleColliding &&
+    !isAnySameColorRectangleColliding &&
+    !isAnyInTheBox &&
+    !isAnyRedColorRectangleCollidingWithGreen &&
+    !isAnyYellowInTheBox &&
     onlyFewCloseRectangles &&
-    redHasOnlyThreeBlueCloseBy
+    redAreInGroupsWithoutGreens &&
+    redAreInGroupsWithoutYellows &&
+    greensAreInGroupsWithoutYellows &&
+    redHasOnlyFewBlueCloseBy
   );
 }

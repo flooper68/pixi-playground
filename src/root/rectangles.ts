@@ -61,7 +61,7 @@ export function createRandomRectangle(props: {
     title: "Blue",
     x,
     y,
-    width: 5,
-    height: 5,
+    width: 10,
+    height: 10,
   };
 }
